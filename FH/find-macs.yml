@@ -1,0 +1,28 @@
+---
+- name: Find mac address in sec-switches
+  hosts: switch
+  gather_facts: false
+  connection: local
+  # En el Job template hacer una encuesta con la variable "mac"
+     
+  tasks:
+    - name: buscar una mac
+      ansible.builtin.debug:
+        msg: 'Searching for {{ mac }}'
+
+    - name: search
+      ios_command:
+        commands:
+          - "show mac address-table | include {{ mac }}"
+      register: printout
+    - set_fact:
+        intf: |
+          {{printout.stdout_lines[0] | map('regex_replace','^(?:[^ ]*\ ){12}([^ ]*)') | list }}
+    - name: show int desc
+      ios_command:
+        commands:
+          - "sh interfaces description | inc {{ intf[0].strip() }}"
+      register: printout2
+    - name: Ver Salida
+      debug:
+        var: printout2
